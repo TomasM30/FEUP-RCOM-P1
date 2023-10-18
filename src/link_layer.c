@@ -17,7 +17,7 @@ int numTries;
 unsigned char byte;
 
 
-enum State {START, FLAG, ADDR, CTRL, BCC1};
+enum State {START, FLAG, ADDR, CTRL, BCC1, ESCAPE};
 
 enum State state;
 
@@ -348,9 +348,88 @@ int llread(unsigned char *packet)
         return -1;
     }
 
+    unsigned char byte;
 
+    //o que meter no tamanho do frame?
+    unsigned char *data = malloc(FRAME_SIZE); // Allocate memory for the data
+    unsigned char bcc1 = 0;
+    unsigned char bcc2 = 0;
+    int dataSize = 0;
+    int state = START;
 
-    return 0;
+    while (state != END) {
+        if (read(serialPortFd, &byte, 1) > 0) {
+            switch (state) {
+                case START:
+                    if (byte == FLAG_BYTE) {
+                        state = FLAG;
+                    }
+                    break;
+                case FLAG:
+                    if (byte == ADDR_SET) {
+                        state = ADDR;
+                    } else if (byte != FLAG_BYTE) {
+                        state = START;
+                    }
+                    break;
+                case ADDR:
+                    if (byte == CTRL_SET) {
+                        state = CTRL;
+                    } else if (byte == FLAG_BYTE) {
+                        state = FLAG;
+                    } else {
+                        state = START;
+                    }
+                    break;
+                case CTRL:
+                    if (byte == BCC1(ADDR_SET, CTRL_SET)) {
+                        bcc1 = byte;
+                        state = BCC1;
+                    } else if (byte == FLAG_BYTE) {
+                        state = FLAG;
+                    } else {
+                        state = START;
+                    }
+                    break;
+                case BCC1:
+                    if (byte == FLAG_BYTE) {
+                        state = END;
+                    } else {
+                        data[dataSize++] = byte; // Copy byte to data
+                        bcc2 ^= byte; // BCC2 xor received byte
+                        if (byte == ESCAPE_BYTE) { //next byte is stuffed
+                            state = ESCAPE;
+                        }
+                    }
+                    break;
+                case ESCAPE:
+                    data[dataSize++] = byte ^ 0x20; // Unstuff byte
+                    bcc2 ^= byte ^ 0x20; // BCC2 xor unstuffed byte
+                    state = BCC1; // Return to BCC1 state
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    free(data);
+
+    if (bcc1 != BCC1(ADDR_SET, CTRL_SET) || bcc2 != 0) { // check if BCC1 = BCC1(ADDR_SET, CTRL_SET) and BCC2 = 0. If BCC2 != 0, there was an error in the data
+        return -1;
+    }
+
+    // Perform byte destuffing
+    int j = 0;
+    for (int i = 0; i < dataSize; i++) { // Correctly copy the data to the packet and calculate how many chars were read
+        if (data[i] == ESCAPE_BYTE) {
+            packet[j++] = data[++i] ^ 0x20;
+        } else {
+            packet[j++] = data[i];
+        }
+    }
+
+    return j;
 }
 
 ////////////////////////////////////////////////
