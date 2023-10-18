@@ -16,11 +16,16 @@
 #include <signal.h>
 
 #define FLAG_BYTE (0X7E)
+#define ESCAPE_BYTE (0X7D)
 #define ADDR_SET (0X03)
 #define ADDR_UA (0X01)
 #define CTRL_SET (0X03)
 #define CTRL_UA (0X07)
 #define CTRL_DISC (0x0B)
+#define CTRL_RR0 (0X05)
+#define CTRL_RR1 (0x85)
+#define CTRL_RJ0 (0X01)
+#define CTRL_RJ1 (0x81)
 #define BCC1(a,c) (a^c)
 
 typedef enum
