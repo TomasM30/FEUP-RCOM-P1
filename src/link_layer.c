@@ -17,7 +17,7 @@ int numTries;
 unsigned char byte;
 
 
-enum State {START, FLAG, ADDR, CTRL, BCC1, ESCAPE};
+enum State {START, FLAG, ADDR, CTRL, BCC1, DATA, ESCAPE, BCC2};
 
 enum State state;
 
@@ -225,7 +225,7 @@ int llwrite(const unsigned char *buf, int bufSize)
 
     frame[0] = FLAG_BYTE;
     frame[1] = ADDR_SET;
-    frame[2] = (sequenceNumber << 6);
+    frame[2] = (sequenceNumber << 6); // 0x40 or 0x00
     frame[3] = BCC1(ADDR_SET, sequenceNumber);
 
     unsigned char bcc2 = 0;
@@ -239,7 +239,7 @@ int llwrite(const unsigned char *buf, int bufSize)
     int stuffingCount = 0;  // Counter for stuffed bytes
 
     for (unsigned int i = 0; i < bufSize; i++) {
-        if (buf[i] == FLAG || buf[i] == ESCAPE_BYTE) {
+        if (buf[i] == FLAG_BYTE || buf[i] == ESCAPE_BYTE) {
             stuffingCount++;
         }
     }
@@ -249,7 +249,7 @@ int llwrite(const unsigned char *buf, int bufSize)
     j = 4;  // Reset the position in the frame
 
     for (unsigned int i = 0; i < bufSize; i++) {
-        if (buf[i] == FLAG || buf[i] == ESCAPE_BYTE) {
+        if (buf[i] == FLAG_BYTE || buf[i] == ESCAPE_BYTE) {
             frame[j++] = ESCAPE_BYTE;  // Insert an ESCAPE_BYTE before stuffed byte
             frame[j++] = buf[i] ^ 0x20;  // Stuff the byte
         }
@@ -305,7 +305,7 @@ int llwrite(const unsigned char *buf, int bufSize)
                         else state = START;
                         break;
                     case BCC1:
-                        if (byte == FLAG){
+                        if (byte == FLAG_BYTE){
                             STOP_M = TRUE;
                         }
                         else state = START;
@@ -356,8 +356,9 @@ int llread(unsigned char *packet)
     unsigned char bcc2 = 0;
     int dataSize = 0;
     int state = START;
+    int bcc2;
 
-    while (state != END) {
+    while (STOP_M == FALSE) {
         if (read(serialPortFd, &byte, 1) > 0) {
             switch (state) {
                 case START:
@@ -377,6 +378,10 @@ int llread(unsigned char *packet)
                         state = CTRL;
                     } else if (byte == FLAG_BYTE) {
                         state = FLAG;
+                    } else if (byte == CTRL_DISC) {
+                        unsigned char bytes[5]={FLAG_BYTE, ADDR_UA, CTRL_DISC, BCC1(ADDR_UA, CTRL_DISC), FLAG_BYTE};
+                        int x = write(serialPortFd, bytes, 5); // send confirmation frame to llclose
+                        return 0; 
                     } else {
                         state = START;
                     }
@@ -428,6 +433,7 @@ int llread(unsigned char *packet)
             packet[j++] = data[i];
         }
     }
+
 
     return j;
 }
