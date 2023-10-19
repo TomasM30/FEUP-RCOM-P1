@@ -17,7 +17,7 @@ int numTries;
 unsigned char byte;
 
 
-enum State {START, FLAG, ADDR, CTRL, BCC1, DATA, ESCAPE, BCC2};
+enum State {START, FLAG, ADDR, CTRL, BCC1, DATA, ESCAPE, READ};
 
 enum State state;
 
@@ -350,8 +350,6 @@ int llread(unsigned char *packet)
 
     unsigned char byte;
 
-    //o que meter no tamanho do frame?
-    unsigned char *data = malloc(FRAME_SIZE); // Allocate memory for the data
     unsigned char bcc1 = 0;
     unsigned char bcc2 = 0;
     int dataSize = 0;
@@ -374,22 +372,21 @@ int llread(unsigned char *packet)
                     }
                     break;
                 case ADDR:
-                    if (byte == CTRL_SET) {
+                    if (byte == 0x00 || byte == 0x40) {
                         state = CTRL;
+                        bcc1 = byte;
                     } else if (byte == FLAG_BYTE) {
                         state = FLAG;
                     } else if (byte == CTRL_DISC) {
-                        unsigned char bytes[5]={FLAG_BYTE, ADDR_UA, CTRL_DISC, BCC1(ADDR_UA, CTRL_DISC), FLAG_BYTE};
-                        int x = write(serialPortFd, bytes, 5); // send confirmation frame to llclose
-                        return 0; 
+                        return sendControlPacket();
                     } else {
                         state = START;
                     }
                     break;
                 case CTRL:
                     if (byte == BCC1(ADDR_SET, CTRL_SET)) {
-                        bcc1 = byte;
                         state = BCC1;
+                        bcc1 = byte;
                     } else if (byte == FLAG_BYTE) {
                         state = FLAG;
                     } else {
@@ -398,19 +395,26 @@ int llread(unsigned char *packet)
                     break;
                 case BCC1:
                     if (byte == FLAG_BYTE) {
-                        state = END;
+                        STOP_M = TRUE;
+                        return sendControlPacket();
                     } else {
-                        data[dataSize++] = byte; // Copy byte to data
-                        bcc2 ^= byte; // BCC2 xor received byte
-                        if (byte == ESCAPE_BYTE) { //next byte is stuffed
-                            state = ESCAPE;
-                        }
+                        state = READ;
+                    }
+                    break;
+                case READ:
+                    if(byte == FLAG_BYTE){
+                        STOP_M = TRUE;
+                        return sendControlPacket();
+                    }
+                    else if (byte == ESCAPE_BYTE) {
+                        state = ESCAPE;
                     }
                     break;
                 case ESCAPE:
-                    data[dataSize++] = byte ^ 0x20; // Unstuff byte
-                    bcc2 ^= byte ^ 0x20; // BCC2 xor unstuffed byte
-                    state = BCC1; // Return to BCC1 state
+                    state = READ;
+                    byte ^= 0x20;
+                    packet[dataSize++] = byte;
+                    bcc2 ^= byte;
                     break;
                 default:
                     break;
@@ -418,24 +422,22 @@ int llread(unsigned char *packet)
         }
     }
 
-    free(data);
-
     if (bcc1 != BCC1(ADDR_SET, CTRL_SET) || bcc2 != 0) { // check if BCC1 = BCC1(ADDR_SET, CTRL_SET) and BCC2 = 0. If BCC2 != 0, there was an error in the data
         return -1;
     }
 
-    // Perform byte destuffing
-    int j = 0;
-    for (int i = 0; i < dataSize; i++) { // Correctly copy the data to the packet and calculate how many chars were read
-        if (data[i] == ESCAPE_BYTE) {
-            packet[j++] = data[++i] ^ 0x20;
-        } else {
-            packet[j++] = data[i];
-        }
-    }
-
-
     return j;
+}
+
+int sendControlPacket()
+{
+    unsigned char bytes[5]={FLAG_BYTE, ADDR_UA, CTRL_DISC, BCC1(ADDR_UA, CTRL_DISC), FLAG_BYTE};
+    int x = write(serialPortFd, bytes, 5);
+    if (x == -1) {
+        perror("Error writing to the serial port");
+        return -1;
+    }
+    return 0;
 }
 
 ////////////////////////////////////////////////

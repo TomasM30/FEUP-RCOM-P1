@@ -63,6 +63,10 @@ int llwrite(const unsigned char *buf, int bufSize);
 // Return number of chars read, or "-1" on error.
 int llread(unsigned char *packet);
 
+// Send control packet.
+// Return "0" on success or "-1" on error.
+int sendControlPacket();
+
 // Close previously opened connection.
 // if showStatistics == TRUE, link layer should print statistics in the console on close.
 // Return "1" on success or "-1" on error.
