@@ -354,7 +354,6 @@ int llread(unsigned char *packet)
     unsigned char bcc2 = 0;
     int dataSize = 0;
     int state = START;
-    int bcc2;
 
     while (STOP_M == FALSE) {
         if (read(serialPortFd, &byte, 1) > 0) {
