@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "application_layer.h"
 
@@ -15,13 +16,14 @@
 //   $2: tx | rx
 //   $3: filename
 int main(int argc, char *argv[])
-{
+{   
     if (argc < 4)
     {
         printf("Usage: %s /dev/ttySxx tx|rx filename\n", argv[0]);
         exit(1);
     }
 
+    srand(time(NULL));
     const char *serialPort = argv[1];
     const char *role = argv[2];
     const char *filename = argv[3];
@@ -40,7 +42,5 @@ int main(int argc, char *argv[])
            TIMEOUT,
            filename);
 
-    applicationLayer(serialPort, role, BAUDRATE, N_TRIES, TIMEOUT, filename);
-
-    return 0;
+    return applicationLayer(serialPort, role, BAUDRATE, N_TRIES, TIMEOUT, filename);
 }

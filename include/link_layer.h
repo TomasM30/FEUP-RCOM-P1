@@ -28,6 +28,9 @@
 #define CTRL_RJ1 (0x81)
 #define BCC1(a,c) (a^c)
 
+enum State {START, FLAG, ADDR, CTRL, BCC1, DATA, ESCAPE, READ};
+
+
 typedef enum
 {
     LlTx,
@@ -55,21 +58,10 @@ typedef struct
 // Return "1" on success or "-1" on error.
 int llopen(LinkLayer connectionParameters);
 
-// Send data in buf with size bufSize.
-// Return number of chars written, or "-1" on error.
-int llwrite(const unsigned char *buf, int bufSize);
-
-// Receive data in packet.
-// Return number of chars read, or "-1" on error.
-int llread(unsigned char *packet);
-
-// Send control packet.
-// Return "0" on success or "-1" on error.
-int sendControlPacket();
 
 // Close previously opened connection.
 // if showStatistics == TRUE, link layer should print statistics in the console on close.
 // Return "1" on success or "-1" on error.
-int llclose(int showStatistics);
+int llclose(int serialPortFd, int showStatistics);
 
 #endif // _LINK_LAYER_H_

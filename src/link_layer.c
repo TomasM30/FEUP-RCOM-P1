@@ -8,20 +8,11 @@
 
 
 //global variables
-int serialPortFd = -1;
-int STOP_M = FALSE;
 LinkLayerRole linkerRole;
 int baudRate;
 int timeout;
 int numTries;
 unsigned char byte;
-
-
-enum State {START, FLAG, ADDR, CTRL, BCC1, DATA, ESCAPE, READ};
-
-enum State state;
-
-
 
 
 int alarmEnabled = FALSE;
@@ -42,15 +33,23 @@ void alarmHandler(int signal)
 
 int llopen(LinkLayer connectionParameters)
 {
-
+    int serialPortFd = -1;
 
     serialPortFd = open(connectionParameters.serialPort, O_RDWR | O_NOCTTY);
+
+    printf("%d\n", connectionParameters.role);
 
 
     if (serialPortFd < 0) {
         perror("Error opening the serial port");
         return -1;
     }
+
+    else{
+        printf("Opening serial port: %s\n", connectionParameters.serialPort);
+    }
+
+    
 
     struct termios newtio;
     memset(&newtio, 0, sizeof(newtio));
@@ -68,16 +67,23 @@ int llopen(LinkLayer connectionParameters)
         return -1;
     }
 
+    
+
 
     linkerRole = connectionParameters.role;
     baudRate = connectionParameters.baudRate;
     timeout = connectionParameters.timeout; 
     numTries = connectionParameters.nRetransmissions;
 
+    enum State state;
+
     state = START;
+
+    int STOP_M = FALSE;
 
     switch(linkerRole){
         (void)signal(SIGALRM, alarmHandler);
+        printf("Waiting for connection...1\n");
         // Writer Role
         case LlTx:
             while (numTries > 0) {
@@ -87,54 +93,67 @@ int llopen(LinkLayer connectionParameters)
                 }
                 unsigned char bytes[5] = {FLAG_BYTE, ADDR_SET, CTRL_SET, BCC1(ADDR_SET, CTRL_SET), FLAG_BYTE};
                 int x = write(serialPortFd, bytes, 5);
+
                 if (x == -1) {
                     perror("Error writing to the serial port");
                     return -1;
                 }
                 while(!STOP_M){
-                    if (read(serialPortFd, &byte, 1)){
+                    int s = read(serialPortFd, &byte, 1);
+                    if (s){
                         switch(state){
                             case START:
                                 if (byte == FLAG_BYTE){
                                     state = FLAG;
+                                    printf("FLAG\n");
                                 }
                                 break;
                             case FLAG:
                                 if (byte == ADDR_UA){
                                     state = ADDR;
+                                    printf("ADDR\n");
                                 }
                                 else if (byte != FLAG_BYTE){
                                     state = START;
+                                    printf("START\n");
                                 }
                                 break;
                             case ADDR:
                                 if (byte == CTRL_UA){
                                     state = CTRL;
+                                    printf("CTRL\n");
                                 }
                                 else if (byte == FLAG_BYTE){
                                     state = FLAG;
+                                    printf("FLAG\n");
                                 }
                                 else{
                                     state = START;
+                                    printf("START\n");
                                 }
                                 break;
                             case CTRL:
                                 if (byte == BCC1(ADDR_UA, CTRL_UA)){
                                     state = BCC1;
+                                    printf("BCC1\n");
                                 }
                                 else if (byte == FLAG_BYTE){
                                     state = FLAG;
+                                    printf("FLAG\n");
                                 }
                                 else{
                                     state = START;
+                                    printf("START\n");
                                 }
                                 break;
                             case BCC1:
                                 if (byte == FLAG_BYTE){
                                     STOP_M = TRUE;
+                                    printf("STOP\n");
                                 }
                                 else{
                                     state = START;
+                                    printf("START\n");
                                 }
                                 break;
                             default:
@@ -151,7 +170,8 @@ int llopen(LinkLayer connectionParameters)
         // Reader Role
         case LlRx:
             while(!STOP_M){
-                if (read(serialPortFd, &byte, 1)){
+                int s = read(serialPortFd, &byte, 1);
+                if (s){
                     switch(state){
                         case START:
                             if (byte == FLAG_BYTE){
@@ -203,253 +223,24 @@ int llopen(LinkLayer connectionParameters)
                 }
             }
     numTries = connectionParameters.nRetransmissions;
+
+    printf("Connection established\n");
     return serialPortFd;
 }
 
-////////////////////////////////////////////////
-// LLWRITE
-////////////////////////////////////////////////
-int llwrite(const unsigned char *buf, int bufSize)
-{
-    if (serialPortFd < 0) {
-        fprintf(stderr, "Serial port is not open\n");
-        return -1;
-    }
 
-    int sequenceNumber = 0;
-
-    int frame_len = bufSize + 6;
-    unsigned char *frame = malloc(frame_len);
-    
-    memset(frame, 0, frame_len);
-
-    frame[0] = FLAG_BYTE;
-    frame[1] = ADDR_SET;
-    frame[2] = (sequenceNumber << 6); // 0x40 or 0x00
-    frame[3] = BCC1(ADDR_SET, sequenceNumber);
-
-    unsigned char bcc2 = 0;
-    for (int i = 0; i < bufSize; i++)
-    {
-        frame[i + 4] = buf[i];
-        bcc2 ^= buf[i];
-    }
-    
-    int j = 4;
-    int stuffingCount = 0;  // Counter for stuffed bytes
-
-    for (unsigned int i = 0; i < bufSize; i++) {
-        if (buf[i] == FLAG_BYTE || buf[i] == ESCAPE_BYTE) {
-            stuffingCount++;
-        }
-    }
-
-    frame = realloc(frame, frame_len + stuffingCount);
-
-    j = 4;  // Reset the position in the frame
-
-    for (unsigned int i = 0; i < bufSize; i++) {
-        if (buf[i] == FLAG_BYTE || buf[i] == ESCAPE_BYTE) {
-            frame[j++] = ESCAPE_BYTE;  // Insert an ESCAPE_BYTE before stuffed byte
-            frame[j++] = buf[i] ^ 0x20;  // Stuff the byte
-        }
-        else{
-            frame[j++] = buf[i];
-        }        
-    }
-
-    // After processing the data, add BCC2 and the closing FLAG to the frame.
-    frame[j++] = bcc2;
-    frame[j++] = FLAG;
-
-    int flag = 0;
-    
-    while (numTries > 0){
-        if (alarmEnabled == TRUE) {
-            alarm(timeout);
-            alarmEnabled = FALSE;
-        }
-        int x = write(serialPortFd, frame, j);
-        if (x == -1) {
-            perror("Error writing to the serial port");
-            return -1;
-        }
-        unsigned char byte;
-
-        state = START;
-
-        unsigned char ctrl_byte = 0;
-        STOP_M = FALSE;
-
-        while (STOP_M == FALSE && alarmEnabled == FALSE) {  
-            if (read(serialPortFd, &byte, 1) > 0 == 1) {
-                switch (state) {
-                    case START:
-                        if (byte == FLAG_BYTE) state = FLAG;
-                        break;
-                    case FLAG:
-                        if (byte == ADDR_UA) state = ADDR;
-                        else if (byte != FLAG_BYTE) state = START;
-                        break;
-                    case ADDR:
-                        if (byte == CTRL_RR0 || byte == CTRL_RR1 || byte == CTRL_RJ0 || byte == CTRL_RJ1 || byte == CTRL_DISC){
-                            state = CTRL;
-                            ctrl_byte = byte;   
-                        }
-                        else if (byte == FLAG_BYTE) state = FLAG;
-                        else state = START;
-                        break;
-                    case CTRL:
-                        if (byte == BCC1(ADDR_UA,ctrl_byte)) state = BCC1;
-                        else if (byte == FLAG_BYTE) state = FLAG;
-                        else state = START;
-                        break;
-                    case BCC1:
-                        if (byte == FLAG_BYTE){
-                            STOP_M = TRUE;
-                        }
-                        else state = START;
-                        break;
-                    default: 
-                        break;
-            }
-        } 
-    } 
-
-        if (ctrl_byte == CTRL_RR0 || ctrl_byte == CTRL_RR1){
-            if (sequenceNumber == 0){
-                sequenceNumber = 1;
-            }
-            else{
-                sequenceNumber = 0;
-            }
-            break;
-        } else if (ctrl_byte == CTRL_RJ0 || ctrl_byte == CTRL_RJ1){
-            numTries--;
-            continue;
-        } else{
-            continue;
-        }
-
-    }
-
-    free(frame);
-
-    return frame_len;
-}
-
-////////////////////////////////////////////////
-// LLREAD
-////////////////////////////////////////////////
-int llread(unsigned char *packet)
-{
-    if (serialPortFd < 0) {
-        fprintf(stderr, "Serial port is not open\n");
-        return -1;
-    }
-
-    unsigned char byte;
-
-    unsigned char bcc1 = 0;
-    unsigned char bcc2 = 0;
-    int dataSize = 0;
-    int state = START;
-
-    while (STOP_M == FALSE) {
-        if (read(serialPortFd, &byte, 1) > 0) {
-            switch (state) {
-                case START:
-                    if (byte == FLAG_BYTE) {
-                        state = FLAG;
-                    }
-                    break;
-                case FLAG:
-                    if (byte == ADDR_SET) {
-                        state = ADDR;
-                    } else if (byte != FLAG_BYTE) {
-                        state = START;
-                    }
-                    break;
-                case ADDR:
-                    if (byte == 0x00 || byte == 0x40) {
-                        state = CTRL;
-                        bcc1 = byte;
-                    } else if (byte == FLAG_BYTE) {
-                        state = FLAG;
-                    } else if (byte == CTRL_DISC) {
-                        return sendControlPacket();
-                    } else {
-                        state = START;
-                    }
-                    break;
-                case CTRL:
-                    if (byte == BCC1(ADDR_SET, CTRL_SET)) {
-                        state = BCC1;
-                        bcc1 = byte;
-                    } else if (byte == FLAG_BYTE) {
-                        state = FLAG;
-                    } else {
-                        state = START;
-                    }
-                    break;
-                case BCC1:
-                    if (byte == FLAG_BYTE) {
-                        STOP_M = TRUE;
-                        return sendControlPacket();
-                    } else {
-                        state = READ;
-                    }
-                    break;
-                case READ:
-                    if(byte == FLAG_BYTE){
-                        STOP_M = TRUE;
-                        return sendControlPacket();
-                    }
-                    else if (byte == ESCAPE_BYTE) {
-                        state = ESCAPE;
-                    }
-                    break;
-                case ESCAPE:
-                    state = READ;
-                    byte ^= 0x20;
-                    packet[dataSize++] = byte;
-                    bcc2 ^= byte;
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
-
-    if (bcc1 != BCC1(ADDR_SET, CTRL_SET) || bcc2 != 0) { // check if BCC1 = BCC1(ADDR_SET, CTRL_SET) and BCC2 = 0. If BCC2 != 0, there was an error in the data
-        return -1;
-    }
-
-    return j;
-}
-
-int sendControlPacket()
-{
-    unsigned char bytes[5]={FLAG_BYTE, ADDR_UA, CTRL_DISC, BCC1(ADDR_UA, CTRL_DISC), FLAG_BYTE};
-    int x = write(serialPortFd, bytes, 5);
-    if (x == -1) {
-        perror("Error writing to the serial port");
-        return -1;
-    }
-    return 0;
-}
 
 ////////////////////////////////////////////////
 // LLCLOSE
 ////////////////////////////////////////////////
-int llclose(int showStatistics)
+int llclose(int serialPortFd, int showStatistics)
 {
     if (serialPortFd < 0) {
         fprintf(stderr, "Serial port is not open\n");
         return -1;
     }
 
-    state = START;
+    enum State state = START;
 
 
     (void)signal(SIGALRM, alarmHandler);
@@ -460,7 +251,8 @@ int llclose(int showStatistics)
         perror("Error writing to the serial port");
         return -1;
     }
-        
+    int STOP_M = FALSE;
+
     while (numTries > 0) {
             if (alarmEnabled == TRUE)
             {
@@ -537,5 +329,5 @@ int llclose(int showStatistics)
                0, 0, 0, 0);
     }
 
-    return 1;
+    return 0;
 }
