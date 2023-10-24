@@ -6,7 +6,7 @@
 
 
 
-int receiveFile();
+int receiveFile(int serialPortFd);
 
 
 unsigned char* getControlData(unsigned char* packet, int size, unsigned long int *fileSize);

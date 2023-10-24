@@ -30,12 +30,12 @@ int applicationLayer(const char *serialPort, const char *role, int baudRate,
     if(serialPortFd<0) return -1; 
     if (linkLayer.role == LlTx){
         printf("Sending file...\n");
-        if (sendFile(serialPortFd, filename)!=0)
+        if (sendFile(serialPortFd, filename, timeout, nTries)!=0)
             return -1;
     }
     else if (linkLayer.role == LlRx){
         printf("Receiving file...\n");
-        if (receiveFile()!=0)
+        if (receiveFile(serialPortFd)!=0)
             return -1;
     } 
 

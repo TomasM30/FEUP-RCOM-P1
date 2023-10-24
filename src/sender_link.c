@@ -1,21 +1,21 @@
 #include "../include/sender_link.h"
 #include "../include/link_layer.h"
 
-int sequenceNumber = 0;
 
 
 ////////////////////////////////////////////////
 // LLWRITE
 ////////////////////////////////////////////////
-int llwrite(int serialPortFd, const unsigned char *buf, int bufSize, int timeout)
+int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int timeout, int nTries)
 {
     if (serialPortFd < 0) {
         fprintf(stderr, "Serial port is not open\n");
         return -1;
     }
 
-    sequenceNumber = 0;
-    int frame_len = bufSize + 6;
+
+    int sequenceNumber = 0;
+    int frame_len = packet_size + 6;
     unsigned char *frame = malloc(frame_len);
     
     memset(frame, 0, frame_len);
@@ -23,57 +23,68 @@ int llwrite(int serialPortFd, const unsigned char *buf, int bufSize, int timeout
     frame[0] = FLAG_BYTE;
     frame[1] = ADDR_SET;
     frame[2] = (sequenceNumber)?0x40:0x00; // 0x40 or 0x00
-    frame[3] = BCC1(ADDR_SET, sequenceNumber);
+    frame[3] = BCC1(ADDR_SET, frame[2]);
 
     unsigned char bcc2 = 0;
-    for (int i = 0; i < bufSize; i++)
+    
+    for (int i = 0; i < packet_size; i++)
     {
-        frame[i + 4] = buf[i];
-        bcc2 ^= buf[i];
+        frame[i + 4] = packet[i];
+        bcc2 ^= packet[i];
     }
     
-    int j = 4;
+    
     int stuffingCount = 0;  // Counter for stuffed bytes
 
-    for (unsigned int i = 0; i < bufSize; i++) {
-        if (buf[i] == FLAG_BYTE || buf[i] == ESCAPE_BYTE) {
+    for (unsigned int i = 0; i < packet_size; i++) {
+        if (packet[i] == FLAG_BYTE || packet[i] == ESCAPE_BYTE) {
             stuffingCount++;
         }
     }
 
     frame = realloc(frame, frame_len + stuffingCount);
 
-    j = 4;  // Reset the position in the frame
-
-    for (unsigned int i = 0; i < bufSize; i++) {
-        if (buf[i] == FLAG_BYTE || buf[i] == ESCAPE_BYTE) {
+    
+    int j = 4; // Reset the position in the frame to the first data byte
+    for (unsigned int i = 0; i < packet_size; i++) {
+        if (packet[i] == FLAG_BYTE || packet[i] == ESCAPE_BYTE) {
             frame[j++] = ESCAPE_BYTE;  // Insert an ESCAPE_BYTE before stuffed byte
-            frame[j++] = buf[i] ^ 0x20;  // Stuff the byte
+            frame[j++] = packet[i] ^ 0x20;  // Stuff the byte
         }
         else{
-            frame[j++] = buf[i];
+            frame[j++] = packet[i];
         }        
     }
 
     // After processing the data, add BCC2 and the closing FLAG to the frame.
-    frame[j++] = bcc2;
-    frame[j++] = FLAG;
+    if (bcc2 == FLAG_BYTE || bcc2 == ESCAPE_BYTE) {
+        frame[j++] = ESCAPE_BYTE;
+        frame[j++] = bcc2 ^ 0x20;
+    }
+    else{
+        frame[j++] = bcc2;
+    }
+    frame[j++] = FLAG_BYTE;
 
-    int flag = 0;
+    int alarmEnabled = TRUE;
 
-    int alarmEnabled = FALSE;
+    int numTries = timeout;
 
-    int numTries;
-    
+    (void)signal(SIGALRM, alarmHandler);
+
+    printf("Sending frame...size: %d\n", sizeof(frame));
+
+    int x = write(serialPortFd, frame, j);
+
+        if (x == -1) {
+            perror("Error writing to the serial port");
+            return -1;
+    }
+
     while (numTries > 0){
         if (alarmEnabled == TRUE) {
             alarm(timeout);
             alarmEnabled = FALSE;
-        }
-        int x = write(serialPortFd, frame, j);
-        if (x == -1) {
-            perror("Error writing to the serial port");
-            return -1;
         }
         unsigned char byte;
 
@@ -84,8 +95,9 @@ int llwrite(int serialPortFd, const unsigned char *buf, int bufSize, int timeout
         unsigned char ctrl_byte = 0;
         int STOP_M = FALSE;
 
-        while (STOP_M == FALSE && alarmEnabled == FALSE) {  
-            if (read(serialPortFd, &byte, 1)) {
+        while (STOP_M == FALSE && alarmEnabled == FALSE) { 
+            int s = read(serialPortFd, &byte, 1); 
+            if (s) {
                 switch (state) {
                     case START:
                         if (byte == FLAG_BYTE) state = FLAG;
@@ -135,6 +147,8 @@ int llwrite(int serialPortFd, const unsigned char *buf, int bufSize, int timeout
         }
 
     }
+   
+
 
     free(frame);
 

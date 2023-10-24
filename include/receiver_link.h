@@ -16,5 +16,7 @@ int RejectCtrlByteBySequenceNumber(int sequenceNumber);
 
 int sendControlPacket(int serialPortFd, int ctrl_byte);
 
+unsigned char generateBcc2(const unsigned char* data_rcv, int data_size);
+
 
 #endif // _RECEIVER_LINK_H_

@@ -8,7 +8,7 @@
 
 unsigned char * getControlPacket(const unsigned int c, const char* filename, long int length, unsigned int *size);
 
-int sendFile(int serialPortFd, const char* filename);
+int sendFile(int serialPortFd, const char* filename, int timeout, int nTries);
 
 
 

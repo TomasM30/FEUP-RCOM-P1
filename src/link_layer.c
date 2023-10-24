@@ -1,6 +1,7 @@
 // Link layer protocol implementation
 
 #include "../include/link_layer.h"
+#include "../include/receiver_link.h"
 
 
 // MISC
@@ -81,9 +82,9 @@ int llopen(LinkLayer connectionParameters)
 
     int STOP_M = FALSE;
 
+
     switch(linkerRole){
         (void)signal(SIGALRM, alarmHandler);
-        printf("Waiting for connection...1\n");
         // Writer Role
         case LlTx:
             while (numTries > 0) {
@@ -91,6 +92,7 @@ int llopen(LinkLayer connectionParameters)
                     alarm(timeout);
                     alarmEnabled = FALSE;
                 }
+
                 unsigned char bytes[5] = {FLAG_BYTE, ADDR_SET, CTRL_SET, BCC1(ADDR_SET, CTRL_SET), FLAG_BYTE};
                 int x = write(serialPortFd, bytes, 5);
 
@@ -171,6 +173,7 @@ int llopen(LinkLayer connectionParameters)
         case LlRx:
             while(!STOP_M){
                 int s = read(serialPortFd, &byte, 1);
+                printf("bytes read: %d\n", s);
                 if (s){
                     switch(state){
                         case START:
@@ -221,8 +224,15 @@ int llopen(LinkLayer connectionParameters)
                         }
                     }
                 }
+
+                int send = sendControlPacket(serialPortFd, CTRL_UA);
+                if (send == -1){
+                    printf("Error sending UA packet\n");
+                    return -1;
+                }
             }
     numTries = connectionParameters.nRetransmissions;
+
 
     printf("Connection established\n");
     return serialPortFd;

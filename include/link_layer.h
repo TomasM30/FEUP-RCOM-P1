@@ -28,7 +28,7 @@
 #define CTRL_RJ1 (0x81)
 #define BCC1(a,c) (a^c)
 
-enum State {START, FLAG, ADDR, CTRL, BCC1, DATA, ESCAPE, READ};
+enum State {START, FLAG, ADDR, CTRL, BCC1, READ_DATA, ESCAPE};
 
 
 typedef enum
@@ -46,6 +46,11 @@ typedef struct
     int timeout;
 } LinkLayer;
 
+
+
+void alarmHandler(int signal);
+
+
 // SIZE of maximum acceptable payload.
 // Maximum number of bytes that application layer should send to link layer
 #define MAX_PAYLOAD_SIZE 1000
@@ -57,6 +62,7 @@ typedef struct
 // Open a connection using the "port" parameters defined in struct linkLayer.
 // Return "1" on success or "-1" on error.
 int llopen(LinkLayer connectionParameters);
+
 
 
 // Close previously opened connection.
