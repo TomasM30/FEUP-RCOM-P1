@@ -35,20 +35,16 @@ int receiveFile(int serialPortFd) {
                 printf("Error reading data packet\n");
             }
 
-            printf("Reading %d BYTES \n", data_size);
-            
+            printf("Reading %d BYTES\n", data_size);
             if(data_size == 0) break;
             else if(packet[0] != 3){ 
-                
                 unsigned char *file_buffer = (unsigned char*)malloc(data_size);
                 memcpy(file_buffer, packet+3, data_size-3);
-                file_buffer += data_size+3;                
-
+                file_buffer += data_size+3;    
                 for (int i = 0; i < data_size; i++) {
+                    printf("byyteeee :%d\n", file_buffer[3+i]);
                     fputc(file_buffer[3+i], file);
                 }
-                
-                
                 free(*file_buffer);
                 
             }
@@ -57,5 +53,8 @@ int receiveFile(int serialPortFd) {
 
     
     if (fclose(file)!= 0) return -1;
+    else{
+        printf("File Received\n");
+    }
     return 0;
 }

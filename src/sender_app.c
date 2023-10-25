@@ -94,8 +94,8 @@ int sendFile(int serialPortFd, const char* filename, int timeout, int nTries) {
         file_data += data_size; 
     }
 
-    
 
+    printf("Data Packets sent\n");
 
     unsigned char *endCtrlPacket = getControlPacket(3, filename, file_size, &packet_size);
     if(llwrite(serialPortFd, endCtrlPacket, packet_size, timeout, nTries) == -1) { 
@@ -103,5 +103,6 @@ int sendFile(int serialPortFd, const char* filename, int timeout, int nTries) {
         exit(-1);
     }
     printf("File sent\n");
+    
     return 0;
 }
