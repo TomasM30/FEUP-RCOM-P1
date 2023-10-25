@@ -28,7 +28,6 @@ int llread(int serialPortFd, unsigned char *packet)
 
     int sequenceNumber = 0;
 
-
     while (STOP_M == FALSE) {
         int s = read(serialPortFd, &byte, 1);
         if (s) {
@@ -81,6 +80,9 @@ int llread(int serialPortFd, unsigned char *packet)
                             
                             sendControlPacket(serialPortFd, ctrl_byte);
                             sequenceNumber = sequenceNumber^1;
+
+                            printf("receivinnnnnnng...%d bytes\n", packet[0]);
+
                             return i;
                         }
                         else {

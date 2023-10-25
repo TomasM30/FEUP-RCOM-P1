@@ -95,11 +95,11 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
 
         while (STOP_M == FALSE && alarmEnabled == FALSE) { 
             int x = write(serialPortFd, frame, j);
-
             if (x == -1) {
             perror("Error writing to the serial port");
             return -1;
-    }
+            }
+
             int s = read(serialPortFd, &byte, 1); 
             if (s) {
                 switch (state) {
