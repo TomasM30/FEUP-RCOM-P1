@@ -9,7 +9,6 @@ unsigned char * getControlPacket(const unsigned int order, const char* filename,
     *size = 2+L1+2+L2+1;
 
     unsigned char *packet = (unsigned char*)malloc(*size);
-    int i = 0;
     packet[0] = order;
     packet[1] = 0;
     packet[2] = L1;
@@ -81,7 +80,7 @@ int sendFile(int serialPortFd, const char* filename, int timeout, int nTries) {
         int data_size = bytes_left > (long int) MAX_PAYLOAD_SIZE ? MAX_PAYLOAD_SIZE : bytes_left;
         unsigned char* data = (unsigned char*) malloc(data_size);
         memcpy(data, file_data, data_size);
-        int data_packet_size = 0;
+        unsigned int data_packet_size = 0;
         unsigned char* packet = getDataPacket(data, data_size, &data_packet_size);
                 
         if(llwrite(serialPortFd, packet, data_packet_size, timeout, nTries) == -1) {
@@ -95,7 +94,7 @@ int sendFile(int serialPortFd, const char* filename, int timeout, int nTries) {
     }
 
 
-    printf("====Sendning Ending CTRL Packet====\n");
+    printf("====Sending Ending CTRL Packet====\n");
 
     unsigned char *endCtrlPacket = getControlPacket(3, filename, file_size, &packet_size);
     if(llwrite(serialPortFd, endCtrlPacket, packet_size, timeout, nTries) == -1) { 

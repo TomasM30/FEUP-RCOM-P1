@@ -106,56 +106,44 @@ int llopen(LinkLayer connectionParameters)
                         switch(state){
                             case START:
                                 if (byte == FLAG_BYTE){
-                                    state = FLAG;
-                                    printf("FLAG\n");
-                                }
+                                    state = FLAG;                                }
                                 break;
                             case FLAG:
                                 if (byte == ADDR_UA){
                                     state = ADDR;
-                                    printf("ADDR\n");
                                 }
                                 else if (byte != FLAG_BYTE){
                                     state = START;
-                                    printf("START\n");
                                 }
                                 break;
                             case ADDR:
                                 if (byte == CTRL_UA){
                                     state = CTRL;
-                                    printf("CTRL\n");
                                 }
                                 else if (byte == FLAG_BYTE){
                                     state = FLAG;
-                                    printf("FLAG\n");
                                 }
                                 else{
                                     state = START;
-                                    printf("START\n");
                                 }
                                 break;
                             case CTRL:
                                 if (byte == BCC1(ADDR_UA, CTRL_UA)){
                                     state = BCC1;
-                                    printf("BCC1\n");
                                 }
                                 else if (byte == FLAG_BYTE){
                                     state = FLAG;
-                                    printf("FLAG\n");
                                 }
                                 else{
                                     state = START;
-                                    printf("START\n");
                                 }
                                 break;
                             case BCC1:
                                 if (byte == FLAG_BYTE){
                                     STOP_M = TRUE;
-                                    printf("STOP\n");
                                 }
                                 else{
                                     state = START;
-                                    printf("START\n");
                                 }
                                 break;
                             default:

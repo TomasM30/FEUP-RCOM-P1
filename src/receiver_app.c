@@ -15,38 +15,35 @@ int getControlData(unsigned char* packet, int size, unsigned long int *file_size
 
 int receiveFile(int serialPortFd) {
     
-        unsigned char *packet = (unsigned char *)malloc(MAX_PAYLOAD_SIZE);
-        int packet_size = -1;
-        while ((packet_size =  llread(serialPortFd, packet)) < 0);
-        unsigned long int read_size = 0;
-        int conf = getControlData(packet, packet_size, &read_size); 
-        if (conf != 0) return -1;
+    unsigned char *packet = (unsigned char *)malloc(MAX_PAYLOAD_SIZE);
+    int packet_size = -1;
+    while ((packet_size =  llread(serialPortFd, packet)) < 0);
+    unsigned long int read_size = 0;
+    int conf = getControlData(packet, packet_size, &read_size); 
+    if (conf != 0) return -1;
 
-        printf("This is the Received File Size: %ld\n", read_size);
+    printf("This is the Received File Size: %ld\n", read_size);
 
-        FILE* file = fopen((char *) "penguin-received2.gif", "wb+");
+    FILE* file = fopen((char *) "penguin-received2.gif", "wb+");
         
-        while (read_size > 0) {    
-            
-            int data_size = -1;
-            sleep(3);
-            while ((data_size = llread(serialPortFd, packet)) < 0);
-            if(data_size == 0) break;
-            else if(packet[0] == 1){ 
-                unsigned char *file_buffer = (unsigned char*)malloc(data_size);                
-                memcpy(file_buffer, packet+3, data_size-3);
-                file_buffer += data_size+3;
-                for (int i = 0; i < data_size; i++) {
-                    fputc(file_buffer[3+i], file);
-                }
-                free(*file_buffer);
-            }
-            else continue;
+    while (read_size > 0) {
+    int data_size = -1;
+    while ((data_size = llread(serialPortFd, packet)) < 0);
+    if (data_size == 0) break;
+    else if (packet[0] == 1) {
+        unsigned char *file_buffer = (unsigned char *)malloc(data_size - 3);
+        memcpy(file_buffer, packet + 3, data_size - 3);
+        for (int i = 0; i < data_size - 3; i++) {
+            fputc(file_buffer[i], file);
         }
+        free(file_buffer);
+        } 
+    }
     printf("File Received\n");
     if (fclose(file)!= 0) return -1;
     else{
         printf("File Received\n");
     }
     return 0;
+    
 }

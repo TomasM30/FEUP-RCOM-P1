@@ -42,7 +42,7 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
         }
     }
 
-    realloc(frame, frame_len + stuffingCount);
+    frame = realloc(frame, frame_len + stuffingCount);
 
     
     int j = 4; // Reset the position in the frame to the first data byte
@@ -73,10 +73,10 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
     (void)signal(SIGALRM, alarmHandler);
 
 
-    printf("writinnnnnnng...%d\n", j);
+    //printf("writinnnnnnng...%d\n", j);
 
     
-
+    int valid = FALSE;
 
     while (numTries > 0){
 
@@ -95,6 +95,7 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
 
         while (STOP_M == FALSE && alarmEnabled == FALSE) { 
             int x = write(serialPortFd, frame, j);
+            printf("writinnnnnnng: %d\n", j);
             if (x == -1) {
             perror("Error writing to the serial port");
             return -1;
@@ -131,9 +132,10 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
                         break;
                     default: 
                         break;
-            }
+                }
+            } 
         } 
-    } 
+        if (ctrl_byte == 0) continue;
 
         if (ctrl_byte == CTRL_RR0 || ctrl_byte == CTRL_RR1){
             if (sequenceNumber == 0){
@@ -142,20 +144,18 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
             else{
                 sequenceNumber = 0;
             }
+            valid = TRUE;
+            printf("Exit: success in llwrite\n");
+
             break;
-        } else if (ctrl_byte == CTRL_RJ0 || ctrl_byte == CTRL_RJ1){
-            numTries--;
-            continue;
-        } else{
-            continue;
-        }
-
-    }
-   
-
-
+        } 
+        numTries--;
+    } 
     free(frame);
-
-
+    if (valid == FALSE) {
+        return -1;
+    }
     return 0;
 }
+    
+
