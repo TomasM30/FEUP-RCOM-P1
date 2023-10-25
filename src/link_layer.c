@@ -173,7 +173,6 @@ int llopen(LinkLayer connectionParameters)
         case LlRx:
             while(!STOP_M){
                 int s = read(serialPortFd, &byte, 1);
-                printf("bytes read: %d\n", s);
                 if (s){
                     switch(state){
                         case START:

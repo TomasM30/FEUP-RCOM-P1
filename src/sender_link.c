@@ -42,7 +42,7 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
         }
     }
 
-    frame = realloc(frame, frame_len + stuffingCount);
+    realloc(frame, frame_len + stuffingCount);
 
     
     int j = 4; // Reset the position in the frame to the first data byte
@@ -72,16 +72,14 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
 
     (void)signal(SIGALRM, alarmHandler);
 
-    printf("Sending frame...size: %d\n", sizeof(frame));
 
-    int x = write(serialPortFd, frame, j);
+    printf("writinnnnnnng...%d\n", j);
 
-        if (x == -1) {
-            perror("Error writing to the serial port");
-            return -1;
-    }
+    
+
 
     while (numTries > 0){
+
         if (alarmEnabled == TRUE) {
             alarm(timeout);
             alarmEnabled = FALSE;
@@ -96,6 +94,12 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
         int STOP_M = FALSE;
 
         while (STOP_M == FALSE && alarmEnabled == FALSE) { 
+            int x = write(serialPortFd, frame, j);
+
+            if (x == -1) {
+            perror("Error writing to the serial port");
+            return -1;
+    }
             int s = read(serialPortFd, &byte, 1); 
             if (s) {
                 switch (state) {
@@ -151,6 +155,7 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
 
 
     free(frame);
+
 
     return 0;
 }

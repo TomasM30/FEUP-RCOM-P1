@@ -10,6 +10,8 @@ unsigned char * getControlPacket(const unsigned int c, const char* filename, lon
 
 int sendFile(int serialPortFd, const char* filename, int timeout, int nTries);
 
+unsigned char * getDataPacket(unsigned char* data, unsigned int data_size, unsigned int *size);
+
 
 
 

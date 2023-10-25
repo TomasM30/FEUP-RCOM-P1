@@ -23,7 +23,6 @@ unsigned char * getControlPacket(const unsigned int order, const char* filename,
     packet[pos++] = L2;
     memcpy(packet+pos, filename, L2);
 
-    printf("Packet sizeBROOOOOOOOOOO: %d\n", *size);
     return packet;
 }
 
@@ -61,16 +60,16 @@ int sendFile(int serialPortFd, const char* filename, int timeout, int nTries) {
     unsigned char *startCtrlPacket = getControlPacket(2, filename, file_size, &packet_size);
     
 
+
     if(llwrite(serialPortFd, startCtrlPacket, packet_size, timeout, nTries) != 0){ 
         printf("Exit: error in start ctrl packet\n");
         return -1;
     }
 
-    printf("Data not assembleeeeddd\n");
 
 
-    unsigned char* content = (unsigned char*)malloc(sizeof(unsigned char) * file_size);
-    fread(content, sizeof(unsigned char), file_size, file);
+    unsigned char* file_data = (unsigned char*)malloc(sizeof(unsigned char) * file_size);
+    fread(file_data, sizeof(unsigned char), file_size, file);
     long int bytes_left = file_size;
 
 
@@ -78,9 +77,11 @@ int sendFile(int serialPortFd, const char* filename, int timeout, int nTries) {
 
         int data_size = bytes_left > (long int) MAX_PAYLOAD_SIZE ? MAX_PAYLOAD_SIZE : bytes_left;
         unsigned char* data = (unsigned char*) malloc(data_size);
-        memcpy(data, content, data_size);
-        int data_packet_size;
+        memcpy(data, file_data, data_size);
+        int data_packet_size = 0;
         unsigned char* packet = getDataPacket(data, data_size, &data_packet_size);
+
+        printf("Sent %d bytes\n", data_size);
                 
         if(llwrite(serialPortFd, packet, data_packet_size, timeout, nTries) == -1) {
             printf("Exit: error in data packets\n");
@@ -88,7 +89,9 @@ int sendFile(int serialPortFd, const char* filename, int timeout, int nTries) {
         }
                 
         bytes_left -= (long int) MAX_PAYLOAD_SIZE; 
-        content += data_size; 
+
+        printf("the bytes left are %ld\n", bytes_left);
+        file_data += data_size; 
     }
 
     

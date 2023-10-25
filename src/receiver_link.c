@@ -28,6 +28,7 @@ int llread(int serialPortFd, unsigned char *packet)
 
     int sequenceNumber = 0;
 
+
     while (STOP_M == FALSE) {
         int s = read(serialPortFd, &byte, 1);
         if (s) {
@@ -36,7 +37,7 @@ int llread(int serialPortFd, unsigned char *packet)
                     if (byte == FLAG_BYTE) {
                         state = FLAG;
                     }
-                    break;
+                     break;
                 case FLAG:
                     if (byte == ADDR_SET) {
                         state = ADDR;
@@ -48,6 +49,7 @@ int llread(int serialPortFd, unsigned char *packet)
                     if (byte == 0x00 || byte == 0x40) {
                         state = CTRL;
                         ctrl_byte = byte;
+
                     } else if (byte == FLAG_BYTE) {
                         state = FLAG;
                     } else if (byte == CTRL_DISC) {
@@ -72,11 +74,11 @@ int llread(int serialPortFd, unsigned char *packet)
                         i--;
                         packet[i] = '\0';
                         unsigned char bcc2_packet = generateBcc2(packet, i);
-                                
+        
                         if (bcc2_packet == bcc2) {
-                            int x = sizeof(*packet);                            
                             STOP_M = TRUE;
                             ctrl_byte = AcceptCtrlByteBySequenceNumber(sequenceNumber);
+                            
                             sendControlPacket(serialPortFd, ctrl_byte);
                             sequenceNumber = sequenceNumber^1;
                             return i;
@@ -100,8 +102,9 @@ int llread(int serialPortFd, unsigned char *packet)
                     if (byte == FLAG_BYTE || byte == ESCAPE_BYTE) packet[i++] = byte;
                     else{
                         packet[i++] = ESCAPE_BYTE;
-                        packet[i++] = byte;
+                        packet[i++] = byte ^ 0x20;
                     }
+                    
                     break;
                 default:
                     break;
