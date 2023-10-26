@@ -98,9 +98,7 @@ int llread(int serialPortFd, unsigned char *packet)
                     break;
                 case ESCAPE:
                     state = READ_DATA;
-                    if (byte == FLAG_BYTE || byte == ESCAPE_BYTE) packet[i++] = byte;
-                    else{
-                        packet[i++] = ESCAPE_BYTE;
+                    if (byte == 0x5e || byte == 0x5d) {
                         packet[i++] = byte ^ 0x20;
                     }
                     
@@ -146,7 +144,6 @@ int RejectCtrlByteBySequenceNumber(int sequenceNumber)
 int sendControlPacket(int serialPortFd, int ctrl_byte)
 {
     unsigned char bytes[5]={FLAG_BYTE, ADDR_UA, ctrl_byte, BCC1(ADDR_UA, ctrl_byte), FLAG_BYTE};
-    printf("bcc1 == %d\n", BCC1(ADDR_UA, ctrl_byte));
     int x = write(serialPortFd, bytes, 5);
     if (x == -1) {
         perror("Error writing to the serial port");
