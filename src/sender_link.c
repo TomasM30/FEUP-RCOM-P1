@@ -68,7 +68,7 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
 
     int alarmEnabled = TRUE;
 
-    int numTries = timeout;
+    int numTries = nTries;
 
     (void)signal(SIGALRM, alarmHandler);
 
@@ -120,7 +120,9 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
                         else state = START;
                         break;
                     case CTRL:
-                        if (byte == BCC1(ADDR_UA,ctrl_byte)) state = BCC1;
+                        if (byte == BCC1(ADDR_UA,ctrl_byte)){
+                            state = BCC1;
+                        } 
                         else if (byte == FLAG_BYTE) state = FLAG;
                         else state = START;
                         break;
@@ -153,6 +155,7 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
     } 
     free(frame);
     if (valid == FALSE) {
+        printf("Exit: error in llwrite\n");
         return -1;
     }
     return 0;

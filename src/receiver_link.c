@@ -146,6 +146,7 @@ int RejectCtrlByteBySequenceNumber(int sequenceNumber)
 int sendControlPacket(int serialPortFd, int ctrl_byte)
 {
     unsigned char bytes[5]={FLAG_BYTE, ADDR_UA, ctrl_byte, BCC1(ADDR_UA, ctrl_byte), FLAG_BYTE};
+    printf("bcc1 == %d\n", BCC1(ADDR_UA, ctrl_byte));
     int x = write(serialPortFd, bytes, 5);
     if (x == -1) {
         perror("Error writing to the serial port");

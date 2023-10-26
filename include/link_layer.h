@@ -53,7 +53,7 @@ void alarmHandler(int signal);
 
 // SIZE of maximum acceptable payload.
 // Maximum number of bytes that application layer should send to link layer
-#define MAX_PAYLOAD_SIZE 900
+#define MAX_PAYLOAD_SIZE 255
 
 // MISC
 #define FALSE 0
