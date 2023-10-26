@@ -73,6 +73,8 @@ int llread(int serialPortFd, unsigned char *packet)
                         i--;
                         packet[i] = '\0';
                         unsigned char bcc2_packet = generateBcc2(packet, i);
+
+                        printf("ctrl byte: %x\n", ctrl_byte);
         
                         if (bcc2_packet == bcc2) {
                             STOP_M = TRUE;
@@ -80,17 +82,20 @@ int llread(int serialPortFd, unsigned char *packet)
                             
                             sendControlPacket(serialPortFd, ctrl_byte);
                             sequenceNumber = sequenceNumber^1;
+                            printf("=====validated by RR0/RR1=====\n");
                             return i;
                         }
                         else {
                             ctrl_byte = RejectCtrlByteBySequenceNumber(sequenceNumber);
                             sendControlPacket(serialPortFd, ctrl_byte);
+                            printf("=====rejected by RJ0/RJ1=====\n");
                             return -1;
                         }
                         
                     }
                     else if (byte == ESCAPE_BYTE) {
                         state = ESCAPE;
+                        
                     }
                     else{
                         packet[i++] = byte;
@@ -98,9 +103,7 @@ int llread(int serialPortFd, unsigned char *packet)
                     break;
                 case ESCAPE:
                     state = READ_DATA;
-                    if (byte == 0x5e || byte == 0x5d) {
-                        packet[i++] = byte ^ 0x20;
-                    }
+                    packet[i++] = byte ^ 0x20;
                     
                     break;
                 default:
@@ -108,6 +111,7 @@ int llread(int serialPortFd, unsigned char *packet)
             }
         }
     }
+    printf("=====rejected by timeout=====\n");
     return -1;
 }
 

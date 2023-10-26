@@ -72,9 +72,6 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
 
     (void)signal(SIGALRM, alarmHandler);
 
-
-    //printf("writinnnnnnng...%d\n", j);
-
     
     int valid = FALSE;
 
@@ -100,16 +97,18 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
             perror("Error writing to the serial port");
             return -1;
             }
-
+            while (STOP_M == FALSE) { 
             int s = read(serialPortFd, &byte, 1); 
             if (s) {
                 switch (state) {
                     case START:
                         if (byte == FLAG_BYTE) state = FLAG;
+                        printf("INSIDE START\n");
                         break;
                     case FLAG:
                         if (byte == ADDR_UA) state = ADDR;
                         else if (byte != FLAG_BYTE) state = START;
+                        printf("INSIDE FLAG\n");
                         break;
                     case ADDR:
                         if (byte == CTRL_RR0 || byte == CTRL_RR1 || byte == CTRL_RJ0 || byte == CTRL_RJ1 || byte == CTRL_DISC){
@@ -118,6 +117,7 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
                         }
                         else if (byte == FLAG_BYTE) state = FLAG;
                         else state = START;
+                        printf("INSIDE ADDR\n");
                         break;
                     case CTRL:
                         if (byte == BCC1(ADDR_UA,ctrl_byte)){
@@ -125,18 +125,23 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
                         } 
                         else if (byte == FLAG_BYTE) state = FLAG;
                         else state = START;
+                        printf("INSIDE CTRL\n");
                         break;
                     case BCC1:
                         if (byte == FLAG_BYTE){
                             STOP_M = TRUE;
                         }
                         else state = START;
+                        printf("INSIDE BCC1\n");
                         break;
                     default: 
                         break;
+                    }
                 }
             } 
+            
         } 
+        printf("READ\n");
         if (ctrl_byte == 0) continue;
 
         if (ctrl_byte == CTRL_RR0 || ctrl_byte == CTRL_RR1){

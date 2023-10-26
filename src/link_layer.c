@@ -257,7 +257,8 @@ int llclose(int serialPortFd, int showStatistics)
                 alarmEnabled = FALSE;
             }
             while(!STOP_M && !alarmEnabled){
-                if (read(serialPortFd, &byte, 1)){
+                int s = read(serialPortFd, &byte, 1);
+                if (s){
                     switch(state){
                         case START:
                             if (byte == FLAG_BYTE){
@@ -309,6 +310,7 @@ int llclose(int serialPortFd, int showStatistics)
                 }
                 numTries--;
             }
+    if (STOP_M != TRUE) return -1;
     unsigned char bytes_ua[5] = {FLAG_BYTE, ADDR_UA, CTRL_UA, BCC1(ADDR_UA, CTRL_UA), FLAG_BYTE};
     write(serialPortFd, bytes_ua, 5);
     
