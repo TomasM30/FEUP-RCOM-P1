@@ -49,7 +49,9 @@ typedef struct
 } LinkLayer;
 
 
-
+// Turn on alarm and set is enable variable to true.
+// Arguments:
+// serialPort: Serial port name (e.g., /dev/ttyS0).
 void alarmHandler(int signal);
 
 
@@ -62,12 +64,16 @@ void alarmHandler(int signal);
 #define TRUE 1
 
 // Open a connection using the "port" parameters defined in struct linkLayer.
+// Arguments:
+// connectionParameters: Struct with parameters for estabilishing connection.
 // Return "1" on success or "-1" on error.
 int llopen(LinkLayer connectionParameters);
 
 
 
 // Close previously opened connection.
+// Arguments:
+// serialPortFd: File descriptor of the serial port.
 // if showStatistics == TRUE, link layer should print statistics in the console on close.
 // Return "1" on success or "-1" on error.
 int llclose(int serialPortFd, int showStatistics);
