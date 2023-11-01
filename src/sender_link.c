@@ -6,7 +6,7 @@
 ////////////////////////////////////////////////
 // LLWRITE
 ////////////////////////////////////////////////
-int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int timeout, int nTries)
+int llwrite(unsigned int sequenceNumber, int serialPortFd, const unsigned char *packet, int packet_size, int timeout, int nTries)
 {
     if (serialPortFd < 0) {
         fprintf(stderr, "Serial port is not open\n");
@@ -14,7 +14,7 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
     }
 
 
-    int sequenceNumber = 0;
+    
     int frame_len = packet_size + 6;
     unsigned char *frame = malloc(frame_len);
     
@@ -103,12 +103,10 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
                 switch (state) {
                     case START:
                         if (byte == FLAG_BYTE) state = FLAG;
-                        printf("INSIDE START\n");
                         break;
                     case FLAG:
                         if (byte == ADDR_UA) state = ADDR;
                         else if (byte != FLAG_BYTE) state = START;
-                        printf("INSIDE FLAG\n");
                         break;
                     case ADDR:
                         if (byte == CTRL_RR0 || byte == CTRL_RR1 || byte == CTRL_RJ0 || byte == CTRL_RJ1 || byte == CTRL_DISC){
@@ -117,7 +115,6 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
                         }
                         else if (byte == FLAG_BYTE) state = FLAG;
                         else state = START;
-                        printf("INSIDE ADDR\n");
                         break;
                     case CTRL:
                         if (byte == BCC1(ADDR_UA,ctrl_byte)){
@@ -125,14 +122,12 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
                         } 
                         else if (byte == FLAG_BYTE) state = FLAG;
                         else state = START;
-                        printf("INSIDE CTRL\n");
                         break;
                     case BCC1:
                         if (byte == FLAG_BYTE){
                             STOP_M = TRUE;
                         }
                         else state = START;
-                        printf("INSIDE BCC1\n");
                         break;
                     default: 
                         break;
@@ -163,6 +158,8 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
         printf("Exit: error in llwrite\n");
         return -1;
     }
+
+
     return 0;
 }
     

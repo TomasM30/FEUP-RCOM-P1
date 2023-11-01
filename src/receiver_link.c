@@ -48,6 +48,12 @@ int llread(int serialPortFd, unsigned char *packet)
                     if (byte == 0x00 || byte == 0x40) {
                         state = CTRL;
                         ctrl_byte = byte;
+                        if (byte == 0x40) {
+                            sequenceNumber = 1;
+                        }
+                        else {
+                            sequenceNumber = 0;
+                        }
 
                     } else if (byte == FLAG_BYTE) {
                         state = FLAG;
@@ -125,20 +131,20 @@ unsigned char generateBcc2(const unsigned char* data_rcv, int data_size) {
 int AcceptCtrlByteBySequenceNumber(int sequenceNumber)
 {
     if (sequenceNumber == 0) {
-        return CTRL_RR0;
+        return CTRL_RR1;
     }
     else {
-        return CTRL_RR1;
+        return CTRL_RR0;
     }
 }
 
 int RejectCtrlByteBySequenceNumber(int sequenceNumber)
 {
     if (sequenceNumber == 0) {
-        return CTRL_RJ0;
+        return CTRL_RJ1;
     }
     else {
-        return CTRL_RJ1;
+        return CTRL_RJ0;
     }
 }
 
