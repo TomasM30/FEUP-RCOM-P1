@@ -24,7 +24,7 @@ int receiveFile(int serialPortFd) {
 
     printf("This is the Received File Size: %ld\n", read_size);
 
-    FILE* file = fopen((char *) "penguin-received2.gif", "wb+");
+    FILE* file = fopen((char *) "penguin-received.gif", "wb+");
         
     while (read_size > 0) {
         int data_size = -1;
