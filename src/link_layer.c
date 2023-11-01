@@ -15,16 +15,16 @@ int timeout;
 int numTries;
 unsigned char byte;
 
+int alarmCount = 0;
+
 
 int alarmEnabled = FALSE;
-int alarmCount = 0;
 
 // Alarm function handler
 void alarmHandler(int signal)
 {
-    alarmEnabled = TRUE;
+    alarmEnabled = FALSE;
 }
-
 
 
 ////////////////////////////////////////////////
@@ -84,23 +84,28 @@ int llopen(LinkLayer connectionParameters)
 
 
     switch(linkerRole){
-        (void)signal(SIGALRM, alarmHandler);
         // Writer Role
         case LlTx:
-            while (numTries > 0) {
-                if (alarmEnabled == TRUE) {
-                    alarm(timeout);
-                    alarmEnabled = FALSE;
+            (void)signal(SIGALRM, alarmHandler);
+            while (numTries > 0 && STOP_M == FALSE) {
+                if (alarmEnabled == FALSE) {
+                    alarmHandler(timeout);
+                    alarmEnabled = TRUE;
                 }
 
                 unsigned char bytes[5] = {FLAG_BYTE, ADDR_SET, CTRL_SET, BCC1(ADDR_SET, CTRL_SET), FLAG_BYTE};
                 int x = write(serialPortFd, bytes, 5);
 
+                sleep(1);
+
+                numTries = 3;
+
                 if (x == -1) {
                     perror("Error writing to the serial port");
                     return -1;
                 }
-                while(!STOP_M){
+                while(alarmEnabled && !STOP_M){
+                    alarmEnabled = FALSE;
                     int s = read(serialPortFd, &byte, 1);
                     if (s){
                         switch(state){
@@ -141,6 +146,8 @@ int llopen(LinkLayer connectionParameters)
                             case BCC1:
                                 if (byte == FLAG_BYTE){
                                     STOP_M = TRUE;
+                                    alarmEnabled = FALSE;
+                                    break;
                                 }
                                 else{
                                     state = START;
@@ -153,6 +160,7 @@ int llopen(LinkLayer connectionParameters)
                 }
                 numTries--;
             }
+            if (!numTries) printf("No more tries\n");
             if (STOP_M != TRUE) return -1;
             break;
 
@@ -250,10 +258,10 @@ int llclose(int serialPortFd, int showStatistics)
     }
     int STOP_M = FALSE;
 
-    while (numTries > 0) {
+    while (numTries > 0 && STOP_M == FALSE) {
             if (alarmEnabled == TRUE)
             {
-                alarm(timeout); // Set alarm to be triggered in s
+                alarm(timeout); 
                 alarmEnabled = FALSE;
             }
             while(!STOP_M && !alarmEnabled){

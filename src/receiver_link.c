@@ -82,13 +82,11 @@ int llread(int serialPortFd, unsigned char *packet)
                             
                             sendControlPacket(serialPortFd, ctrl_byte);
                             sequenceNumber = sequenceNumber^1;
-                            printf("=====validated by RR0/RR1=====\n");
                             return i;
                         }
                         else {
                             ctrl_byte = RejectCtrlByteBySequenceNumber(sequenceNumber);
                             sendControlPacket(serialPortFd, ctrl_byte);
-                            printf("=====rejected by RJ0/RJ1=====\n");
                             return -1;
                         }
                         

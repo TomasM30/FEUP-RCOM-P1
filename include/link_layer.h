@@ -31,6 +31,8 @@
 enum State {START, FLAG, ADDR, CTRL, BCC1, READ_DATA, ESCAPE};
 
 
+
+
 typedef enum
 {
     LlTx,
