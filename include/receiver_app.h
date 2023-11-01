@@ -12,5 +12,7 @@
 // Returns 0 on successful file reception, -1 on failure.
 int receiveFile(int serialPortFd);
 
+int getControlData(unsigned char* packet, int size, unsigned long int *file_size);
+
 
 #endif // _RECEIVER_APP_H_
