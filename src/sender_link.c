@@ -1,12 +1,12 @@
 #include "../include/sender_link.h"
 #include "../include/link_layer.h"
 
-
+unsigned int sequenceNumber;
 
 ////////////////////////////////////////////////
 // LLWRITE
 ////////////////////////////////////////////////
-int llwrite(unsigned int sequenceNumber, int serialPortFd, const unsigned char *packet, int packet_size, int timeout, int nTries)
+int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int timeout, int nTries)
 {
     if (serialPortFd < 0) {
         fprintf(stderr, "Serial port is not open\n");
@@ -66,39 +66,36 @@ int llwrite(unsigned int sequenceNumber, int serialPortFd, const unsigned char *
     }
     frame[j++] = FLAG_BYTE;
 
-    int alarmEnabled = TRUE;
+    extern int alarmEnabled;
 
     int numTries = nTries;
 
-    (void)signal(SIGALRM, alarmHandler);
+    unsigned char byte;
 
+    enum State state;
+
+    state = START;
+
+    unsigned char ctrl_byte = 0;
     
-    int valid = FALSE;
+    int STOP_M = FALSE;
 
-    while (numTries > 0){
-
-        if (alarmEnabled == TRUE) {
+    (void)signal(SIGALRM, alarmHandler);
+    while (numTries > 0 && STOP_M == FALSE){
+        if (alarmEnabled == FALSE) {
             alarm(timeout);
-            alarmEnabled = FALSE;
+            alarmEnabled = TRUE;
         }
-        unsigned char byte;
-
-        enum State state;
-
-        state = START;
-
-        unsigned char ctrl_byte = 0;
-        int STOP_M = FALSE;
-
-        while (STOP_M == FALSE && alarmEnabled == FALSE) { 
-            int x = write(serialPortFd, frame, j);
-            printf("writinnnnnnng: %d\n", j);
-            if (x == -1) {
+        int x = write(serialPortFd, frame, j);
+        printf("writinnnnnnng: %d\n", j);
+        if (x == -1) {
             perror("Error writing to the serial port");
             return -1;
-            }
-            while (STOP_M == FALSE) { 
+        }
+
+        while (alarmEnabled && !STOP_M) { 
             int s = read(serialPortFd, &byte, 1); 
+            printf("TESTING %d\n", s);
             if (s) {
                 switch (state) {
                     case START:
@@ -128,39 +125,30 @@ int llwrite(unsigned int sequenceNumber, int serialPortFd, const unsigned char *
                             STOP_M = TRUE;
                         }
                         else state = START;
-                        break;
-                    default: 
-                        break;
+                            break;
+                        default: 
+                            break;
                     }
                 }
-            } 
-            
-        } 
+            }   
+         
         printf("READ\n");
         if (ctrl_byte == 0) continue;
-
-        if (ctrl_byte == CTRL_RR0 || ctrl_byte == CTRL_RR1){
-            if (sequenceNumber == 0){
-                sequenceNumber = 1;
-            }
-            else{
-                sequenceNumber = 0;
-            }
-            valid = TRUE;
+        
+        if ((sequenceNumber == 0 && ctrl_byte == CTRL_RR1) || 
+        (sequenceNumber == 1 && ctrl_byte == CTRL_RR0))
+        {
             printf("Exit: success in llwrite\n");
-
-            break;
-        } 
+            sequenceNumber = (sequenceNumber + 1) % 2;
+            return 0;
+        } else {
+            STOP_M = FALSE;
+            continue;
+        }
         numTries--;
-    } 
-    free(frame);
-    if (valid == FALSE) {
-        printf("Exit: error in llwrite\n");
-        return -1;
-    }
-
-
-    return 0;
-}
+    }  
     
 
+    return -1;
+}
+    

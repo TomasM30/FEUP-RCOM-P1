@@ -23,6 +23,7 @@ int alarmEnabled = FALSE;
 // Alarm function handler
 void alarmHandler(int signal)
 {
+    printf("Alarm Set\n");
     alarmEnabled = FALSE;
 }
 
@@ -89,24 +90,20 @@ int llopen(LinkLayer connectionParameters)
             (void)signal(SIGALRM, alarmHandler);
             while (numTries > 0 && STOP_M == FALSE) {
                 if (alarmEnabled == FALSE) {
-                    alarmHandler(timeout);
+                    alarm(timeout);
                     alarmEnabled = TRUE;
                 }
 
                 unsigned char bytes[5] = {FLAG_BYTE, ADDR_SET, CTRL_SET, BCC1(ADDR_SET, CTRL_SET), FLAG_BYTE};
                 int x = write(serialPortFd, bytes, 5);
 
-                sleep(1);
-
-                numTries = 3;
-
                 if (x == -1) {
                     perror("Error writing to the serial port");
                     return -1;
                 }
                 while(alarmEnabled && !STOP_M){
-                    alarmEnabled = FALSE;
                     int s = read(serialPortFd, &byte, 1);
+                    printf("byte is read: %d\n", s);
                     if (s){
                         switch(state){
                             case START:
@@ -146,7 +143,6 @@ int llopen(LinkLayer connectionParameters)
                             case BCC1:
                                 if (byte == FLAG_BYTE){
                                     STOP_M = TRUE;
-                                    alarmEnabled = FALSE;
                                     break;
                                 }
                                 else{
@@ -266,16 +262,12 @@ int llclose(int serialPortFd, int showStatistics)
                 unsigned char bytes[5] = {FLAG_BYTE, ADDR_SET, CTRL_DISC, BCC1(ADDR_SET, CTRL_DISC), FLAG_BYTE};
                 int x = write(serialPortFd, bytes, 5);
 
-                sleep(1);
-
-                numTries = 3;
-
                 if (x == -1) {
                     perror("Error writing to the serial port");
                     return -1;
                 }
                 while(alarmEnabled && !STOP_M){
-                    alarmEnabled = FALSE;
+
                     int s = read(serialPortFd, &byte, 1);
                     if (s){
                         switch(state){

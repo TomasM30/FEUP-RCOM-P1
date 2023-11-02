@@ -15,7 +15,7 @@
  *   timeout: The time in seconds to wait for an acknowledgement before retransmitting the packet.
  *   nTries: The maximum number of times to attempt retransmission before giving up.
  */
-int llwrite(unsigned int sequenceNumber, int serialPortFd, const unsigned char *packet, int packet_size, int timeout, int nTries);
+int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int timeout, int nTries);
 
 
 #endif // _SENDER_LINK_H_
