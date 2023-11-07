@@ -1,4 +1,5 @@
 #include "../include/receiver_link.h"
+#include "../include/sender_link.h"
 #include "../include/link_layer.h"
 
 
@@ -6,6 +7,8 @@
 ////////////////////////////////////////////////
 // 
 ////////////////////////////////////////////////
+
+extern unsigned int sequenceNumber;
 
 int llread(int serialPortFd, unsigned char *packet)
 {
@@ -26,7 +29,7 @@ int llread(int serialPortFd, unsigned char *packet)
     
     int i = 0;
 
-    int sequenceNumber = 0;
+    
 
     while (STOP_M == FALSE) {
         int s = read(serialPortFd, &byte, 1);
@@ -48,11 +51,11 @@ int llread(int serialPortFd, unsigned char *packet)
                     if (byte == 0x00 || byte == 0x40) {
                         state = CTRL;
                         ctrl_byte = byte;
-                        if (byte == 0x40) {
-                            sequenceNumber = 1;
+                        if (byte == 0x40 && sequenceNumber == 0) {
+                            return -1;
                         }
-                        else {
-                            sequenceNumber = 0;
+                        if (byte == 0x00 && sequenceNumber == 1) {
+                            return -1;
                         }
 
                     } else if (byte == FLAG_BYTE) {

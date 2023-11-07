@@ -87,6 +87,7 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
             alarmEnabled = TRUE;
         }
         int x = write(serialPortFd, frame, j);
+        //sleep(1);
         printf("writinnnnnnng: %d\n", j);
         if (x == -1) {
             perror("Error writing to the serial port");
