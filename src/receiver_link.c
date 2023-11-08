@@ -52,9 +52,13 @@ int llread(int serialPortFd, unsigned char *packet)
                         state = CTRL;
                         ctrl_byte = byte;
                         if (byte == 0x40 && sequenceNumber == 0) {
+                            ctrl_byte = RejectCtrlByteBySequenceNumber(sequenceNumber);
+                            sendControlPacket(serialPortFd, ctrl_byte);
                             return -1;
                         }
                         if (byte == 0x00 && sequenceNumber == 1) {
+                            ctrl_byte = RejectCtrlByteBySequenceNumber(sequenceNumber);
+                            sendControlPacket(serialPortFd, ctrl_byte);
                             return -1;
                         }
 
