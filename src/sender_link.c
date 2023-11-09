@@ -134,7 +134,6 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
         
         if ((ctrl_byte == CTRL_RR1) || (ctrl_byte == CTRL_RR0))
         {
-            printf("Exit: success in llwrite\n");
             sequenceNumber = (sequenceNumber + 1) % 2;
             return 0;
         } else {

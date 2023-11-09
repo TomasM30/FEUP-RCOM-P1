@@ -52,13 +52,11 @@ int llread(int serialPortFd, unsigned char *packet)
                         if (byte == 0x40 && sequenceNumber == 0) {
                             ctrl_byte = AcceptCtrlByteBySequenceNumber(sequenceNumber);
                             sendControlPacket(serialPortFd, ctrl_byte);
-                            printf("=====repeated packet=====\n");
                             return -1;
                         }
                         if (byte == 0x00 && sequenceNumber == 1) {
                             ctrl_byte = AcceptCtrlByteBySequenceNumber(sequenceNumber);
                             sendControlPacket(serialPortFd, ctrl_byte);
-                            printf("=====repeated packet=====\n");
                             return -1;
                         }
 
@@ -85,8 +83,6 @@ int llread(int serialPortFd, unsigned char *packet)
                         i--;
                         packet[i] = '\0';
                         unsigned char bcc2_packet = generateBcc2(packet, i);
-
-                        printf("ctrl byte: %x\n", ctrl_byte);
         
                         if (bcc2_packet == bcc2) {
                             STOP_M = TRUE;
@@ -94,13 +90,11 @@ int llread(int serialPortFd, unsigned char *packet)
                             
                             sendControlPacket(serialPortFd, ctrl_byte);
                             sequenceNumber = sequenceNumber^1;
-                            printf("=====READ APPROVED=====\n");
                             return i;
                         }
                         else {
                             ctrl_byte = RejectCtrlByteBySequenceNumber(sequenceNumber);
                             sendControlPacket(serialPortFd, ctrl_byte);
-                            printf("=====rejected by BCC2=====\n");
                             return -1;
                         }
                         

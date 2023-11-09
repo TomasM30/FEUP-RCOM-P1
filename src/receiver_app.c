@@ -33,7 +33,6 @@ int receiveFile(int serialPortFd) {
         if (data_size == 0) break;
         else if (packet[0] == 1) {
             unsigned char *file_buffer = (unsigned char *)malloc(data_size - 3);
-            printf("Data size: %d\n", data_size);
             memcpy(file_buffer, packet + 3, data_size - 3);
             for (int i = 0; i < data_size - 3; i++) {
                 fputc(file_buffer[i], file);

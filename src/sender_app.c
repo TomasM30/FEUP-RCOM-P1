@@ -47,7 +47,6 @@ int sendFile(int serialPortFd, const char* filename, int timeout, int nTries) {
     int file_init = ftell(file);
     fseek(file, 0L, SEEK_END);
     int file_end = ftell(file);
-    printf("File end: %d\n", file_end);
     long int file_size = file_end-file_init;
     rewind(file);
 

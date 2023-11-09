@@ -103,7 +103,6 @@ int llopen(LinkLayer connectionParameters)
                 }
                 while(alarmEnabled && !STOP_M){
                     int s = read(serialPortFd, &byte, 1);
-                    printf("byte is read: %d\n", s);
                     if (s){
                         switch(state){
                             case START:
