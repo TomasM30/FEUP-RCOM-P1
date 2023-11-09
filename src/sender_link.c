@@ -1,7 +1,9 @@
 #include "../include/sender_link.h"
 #include "../include/link_layer.h"
 
-unsigned int sequenceNumber;
+unsigned int sequenceNumber = 0;
+extern int alarmEnabled;
+
 
 ////////////////////////////////////////////////
 // LLWRITE
@@ -66,8 +68,6 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
     }
     frame[j++] = FLAG_BYTE;
 
-    extern int alarmEnabled;
-
     int numTries = nTries;
 
     unsigned char byte;
@@ -87,7 +87,7 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
             alarmEnabled = TRUE;
         }
         int x = write(serialPortFd, frame, j);
-        printf("writinnnnnnng: %d\n", j);
+        printf("writinnnnnnng sequence number: %d\n", sequenceNumber);
         if (x == -1) {
             perror("Error writing to the serial port");
             return -1;
@@ -132,7 +132,6 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
                 }
             }   
          
-        printf("READ\n");
         if (ctrl_byte == 0) continue;
         
         if ((sequenceNumber == 0 && ctrl_byte == CTRL_RR1) || 
@@ -142,11 +141,12 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
             sequenceNumber = (sequenceNumber + 1) % 2;
             return 0;
         } else {
-            STOP_M = FALSE;
+            numTries--;
             continue;
-        }
-        numTries--;
+        }  
     }  
+
+    printf("Exit: failure in llwrite\n");
     
 
     return -1;

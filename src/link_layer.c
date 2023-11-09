@@ -23,7 +23,7 @@ int alarmEnabled = FALSE;
 // Alarm function handler
 void alarmHandler(int signal)
 {
-    printf("Alarm Set\n");
+    printf("Alarm triggered\n");
     alarmEnabled = FALSE;
 }
 
