@@ -87,7 +87,6 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
             alarmEnabled = TRUE;
         }
         int x = write(serialPortFd, frame, j);
-        printf("writinnnnnnng sequence number: %d\n", sequenceNumber);
         if (x == -1) {
             perror("Error writing to the serial port");
             return -1;
@@ -106,7 +105,7 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
                         else if (byte != FLAG_BYTE) state = START;
                         break;
                     case ADDR:
-                        if (byte == CTRL_RR0 || byte == CTRL_RR1 || byte == CTRL_RJ0 || byte == CTRL_RJ1 || byte == CTRL_DISC){
+                        if (byte == CTRL_RR0 || byte == CTRL_RR1 || byte == CTRL_DISC){
                             state = CTRL;
                             ctrl_byte = byte;   
                         }
@@ -134,8 +133,7 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
          
         if (ctrl_byte == 0) continue;
         
-        if ((sequenceNumber == 0 && ctrl_byte == CTRL_RR1) || 
-        (sequenceNumber == 1 && ctrl_byte == CTRL_RR0))
+        if ((ctrl_byte == CTRL_RR1) || (ctrl_byte == CTRL_RR0))
         {
             printf("Exit: success in llwrite\n");
             sequenceNumber = (sequenceNumber + 1) % 2;
@@ -145,8 +143,6 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
             continue;
         }  
     }  
-
-    printf("Exit: failure in llwrite\n");
     
 
     return -1;
