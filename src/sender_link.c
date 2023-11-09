@@ -94,7 +94,6 @@ int llwrite(int serialPortFd, const unsigned char *packet, int packet_size, int 
 
         while (alarmEnabled && !STOP_M) { 
             int s = read(serialPortFd, &byte, 1); 
-            printf("TESTING %d\n", s);
             if (s) {
                 switch (state) {
                     case START:

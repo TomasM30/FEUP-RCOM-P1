@@ -1,5 +1,6 @@
 #include "../include/receiver_app.h"
 #include "../include/link_layer.h"
+#include "../include/receiver_link.h"
 
 
 int getControlData(unsigned char* packet, int size, unsigned long int *file_size) {

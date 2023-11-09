@@ -1,6 +1,6 @@
 #include "../include/sender_app.h"
 #include "../include/link_layer.h"
-
+#include "../include/sender_link.h"
 
 unsigned char * getControlPacket(const unsigned int order, const char* filename, long int length, unsigned int *size){
     const int L1 = sizeof(length);

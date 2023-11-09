@@ -18,8 +18,6 @@ int llread(int serialPortFd, unsigned char *packet)
     }
 
     unsigned char byte;
-
-    unsigned char bcc1 = 0;
     
     enum State state;
 
@@ -75,7 +73,6 @@ int llread(int serialPortFd, unsigned char *packet)
                 case CTRL:
                     if (byte == BCC1(ADDR_SET, ctrl_byte)) {
                         state = READ_DATA;
-                        bcc1 = byte;
                     } else if (byte == FLAG_BYTE) {
                         state = FLAG;
                     } else {
