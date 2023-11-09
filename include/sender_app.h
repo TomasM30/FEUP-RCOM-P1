@@ -12,6 +12,8 @@
  *   filename: The name of the file to be transmitted.
  *   length: The length of the file in bytes.
  *   size: A pointer to where the size of the constructed packet will be stored.
+ * Returns:
+ *  A pointer to the constructed packet.
  */
 unsigned char * getControlPacket(const unsigned int c, const char* filename, long int length, unsigned int *size);
 
@@ -22,6 +24,8 @@ unsigned char * getControlPacket(const unsigned int c, const char* filename, lon
  *   filename: The name of the file to be sent.
  *   timeout: The time in seconds to wait for an acknowledgement before retransmitting a packet.
  *   nTries: The maximum number of times to attempt retransmission before giving up.
+ * Returns: 
+ *  0 if the file was sent successfully, -1 otherwise.
  */
 int sendFile(int serialPortFd, const char* filename, int timeout, int nTries);
 
@@ -31,11 +35,9 @@ int sendFile(int serialPortFd, const char* filename, int timeout, int nTries);
  *   data: The data to be included in the packet.
  *   data_size: The size of the data in bytes.
  *   size: A pointer to where the size of the constructed packet will be stored.
+ * Returns:
+ *  A pointer to the constructed packet.
  */
 unsigned char * getDataPacket(unsigned char* data, unsigned int data_size, unsigned int *size);
-
-
-
-
 
 #endif // _SENDER_APP_H_

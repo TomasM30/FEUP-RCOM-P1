@@ -1,9 +1,8 @@
-// Link layer header.
-// NOTE: This file must not be changed.
+/* Link layer header.
+NOTE: This file must not be changed. */
 
 #ifndef _LINK_LAYER_H_
 #define _LINK_LAYER_H_
-
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -30,9 +29,6 @@
 
 enum State {START, FLAG, ADDR, CTRL, BCC1, READ_DATA, ESCAPE};
 
-
-
-
 typedef enum
 {
     LlTx,
@@ -49,11 +45,6 @@ typedef struct
 } LinkLayer;
 
 
-// Turn on alarm and set is enable variable to true.
-// Arguments:
-// serialPort: Serial port name (e.g., /dev/ttyS0).
-void alarmHandler(int signal);
-
 
 // SIZE of maximum acceptable payload.
 // Maximum number of bytes that application layer should send to link layer
@@ -63,19 +54,27 @@ void alarmHandler(int signal);
 #define FALSE 0
 #define TRUE 1
 
-// Open a connection using the "port" parameters defined in struct linkLayer.
-// Arguments:
-// connectionParameters: Struct with parameters for estabilishing connection.
-// Return "1" on success or "-1" on error.
+/** Turn on alarm and set is enable variable to true.
+ * Arguments:
+ * serialPort: Serial port name (e.g., /dev/ttyS0).
+ */
+void alarmHandler(int signal);
+
+/** Open a connection using the "port" parameters defined in struct linkLayer.
+ * Arguments:
+ * connectionParameters: Struct with parameters for establishing connection.
+ * Returns:
+ *  "1" on success or "-1" on error.
+ */
 int llopen(LinkLayer connectionParameters);
 
-
-
-// Close previously opened connection.
-// Arguments:
-// serialPortFd: File descriptor of the serial port.
-// if showStatistics == TRUE, link layer should print statistics in the console on close.
-// Return "1" on success or "-1" on error.
+/** Close previously opened connection.
+ * Arguments:
+ * serialPortFd: File descriptor of the serial port.
+ * if showStatistics == TRUE, link layer should print statistics in the console on close.
+ * Returns:
+ *   "1" on success or "-1" on error.
+ */
 int llclose(int serialPortFd, int showStatistics);
 
 #endif // _LINK_LAYER_H_
