@@ -54,13 +54,13 @@ int llread(int serialPortFd, unsigned char *packet)
                         if (byte == 0x40 && sequenceNumber == 0) {
                             ctrl_byte = AcceptCtrlByteBySequenceNumber(sequenceNumber);
                             sendControlPacket(serialPortFd, ctrl_byte);
-                            printf("=====repeated=====\n");
+                            printf("=====repeated packet=====\n");
                             return -1;
                         }
                         if (byte == 0x00 && sequenceNumber == 1) {
                             ctrl_byte = AcceptCtrlByteBySequenceNumber(sequenceNumber);
                             sendControlPacket(serialPortFd, ctrl_byte);
-                            printf("=====repeated=====\n");
+                            printf("=====repeated packet=====\n");
                             return -1;
                         }
 
